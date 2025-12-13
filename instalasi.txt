@@ -1,0 +1,18 @@
+# instalasi
+npm install
+
+# migrate
+npx knex migrate:latest
+
+# seed
+npx knex seed:run
+
+# Membatalkan batch migrasi terakhir
+npx knex migrate:rollback
+
+# Membatalkan SEMUA migrasi 
+npx knex migrate:rollback --all
+
+#run BE
+npm run start:prod        //tanpa nodemon
+npm run start:dev         //develoment dengan nodemon
