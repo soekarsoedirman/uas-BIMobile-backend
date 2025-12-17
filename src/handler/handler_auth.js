@@ -46,13 +46,14 @@ const authregister = async (request, h) => {
 
         // 4. Generate Token
         const token = Jwt.token.generate(
-            { id: newUserID, role: roleID, name: username },
+            { id: newUserID, role: roleID, name: username, customer_id: id_unik||null },
             { key: JWT_SECRET, algorithm: 'HS256' },
             { ttlSec: 14400 }
         );
 
         return h.response({
             username: username,
+            customer_id: id_unik,
             roleID: roleID,
             tokenjwt: token
         }).code(201);
@@ -78,7 +79,8 @@ const authlogin = async (request, h) => {
                 'akun.id_role', 
                 'akun.customer_id',
                 'user_role.role_name',
-                'dim_customer.customer_name'
+                'dim_customer.customer_name',
+                'dim_customer.customer_id'
             )
             .where('akun.email', email)
             .first();
@@ -100,6 +102,7 @@ const authlogin = async (request, h) => {
                 id: user.customer_id || user.email, 
                 role: user.role_name,               
                 role_id: user.id_role,
+                customer_id: user.customer_id,
                 name: displayName 
             },
             { key: JWT_SECRET, algorithm: 'HS256' },
@@ -112,6 +115,7 @@ const authlogin = async (request, h) => {
             data: {
                 username: displayName,
                 role: user.role_name,
+                customer_id: user.customer_id||null,
                 token: token
             }
         }).code(200);

@@ -1,7 +1,7 @@
 const Joi = require("@hapi/joi");
 const { authlogin, authregister, authlogout}= require('./handler/handler_auth');
-const { home, search, product_detail, addcart, cartlist, cartdrop } = require('./handler/handler_customer');
-const { dashboard, addproduct, editproduct, deleteproduct, statistik}= require('./handler/handlre_admin');
+const { home, search, product_detail, addcart, cartlist, cartdrop, order, orderlst } = require('./handler/handler_customer');
+const { dashboard, addproduct, editproduct, deleteproduct, statistik, orderlist, orderconfirm, orderdetail }= require('./handler/handlre_admin');
 const routes = [
 
     //auth
@@ -66,6 +66,13 @@ const routes = [
     {
         method: 'POST',
         path: '/products/{id}/cart',
+        options:{
+            validate:{
+                payload:Joi.object({
+                    quantity: Joi.number().integer().required(),
+                })
+            }
+        },
         handler: addcart,
     },
     {
@@ -78,24 +85,27 @@ const routes = [
         path: '/cart/{id}',
         handler: cartdrop,
     },
-    // {
-    //     method: 'POST',
-    //     path: '/order',
-    //     options: { 
-    //         validate: {
-    //             payload: Joi.object({
-    //                 postalcode: Joi.string().min(5).required(),
-    //                 city: Joi.string().min(2).required(),
-    //                 state: Joi.string().min(2).required(),
-    //                 region: Joi.string().min(2).required(),
-    //                 country: Joi.string().min(2).required(),
-    //                 shipmode_id: Joi.number().integer().required(),
-    //             })
-    //         }
-    //     }, 
-    //     handler: order,
-    // },
-
+    {
+        method: 'POST',
+        path: '/order',
+        options:{
+            validate:{
+                payload:Joi.object({
+                    postal_code: Joi.string().min(5).required(),
+                    state: Joi.string().min(3).required(),
+                    city: Joi.string().min(3).required(),
+                    region: Joi.string().min(3).required(),
+                    shipmode_id: Joi.number().integer().required(),
+                })
+            }
+        },
+        handler: order,
+    },
+    {
+        method: 'GET',
+        path: '/order/list',
+        handler: orderlst,
+    },
 
     //admin
     //admin
@@ -116,6 +126,7 @@ const routes = [
             validate:{
                 payload:Joi.object({
                     product_name: Joi.string().min(3).required(),
+                    price: Joi.number().required(),
                     subkategori_id: Joi.number().integer().required(),
                 })
             }
@@ -140,7 +151,22 @@ const routes = [
         path: '/products/{id}',
         handler: deleteproduct,
     },
-
+    {
+        method: 'GET',
+        path: '/order',
+        handler: orderlist,
+    },
+    {
+        method: 'GET',
+        path: '/order/{id}',
+        handler: orderdetail,
+    },
+    {
+        method: 'POST',
+        path: '/order/{id}',
+        handler: orderconfirm,
+    },
+    
 ]
 
 module.exports = routes;
