@@ -373,7 +373,7 @@ const statistik = async (request, h) => {
             filter(db('fact_sales')
                 .join('dim_product', 'fact_sales.product_id', '=', 'dim_product.product_id')
                 .select('dim_product.product_name')
-                .sum('fact_sales.sales as total')
+                .sum('fact_sales.quantity as total')
                 .groupBy('dim_product.product_name')
                 .orderBy('total', 'desc')
                 .limit(5)),
