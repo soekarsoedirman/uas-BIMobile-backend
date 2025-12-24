@@ -16,3 +16,7 @@ npx knex migrate:rollback --all
 #run BE
 npm run start:prod        //tanpa nodemon
 npm run start:dev         //develoment dengan nodemon
+
+#akun admin
+email : admin@toko.com
+password : admin123
