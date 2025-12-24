@@ -348,103 +348,128 @@ const statistik = async (request, h) => {
         const [
             totalSalesResult,
             totalTxResult,
+            totalQtyResult,
+            totalCustomerResult,
+            totalProductResult,
+
             categoryResult,
             topProductResult,
-            trendResult,
+            trendMonthlyResult,
+            trendQuarterResult,
+            trendYearResult,
+
             segmentResult,
-            cityResult
+            cityResult,
+
+
+            shipModeResult
         ] = await Promise.all([
-            // A. Total Sales
+
+            // Simpulan            
             filter(db('fact_sales').sum('sales as total')).first(),
-
-            // B. Total Transaksi (Untuk hitung AOV)
             filter(db('fact_sales').countDistinct('order_id as total')).first(),
+            filter(db('fact_sales').sum('quantity as total')).first(),
+            filter(db('fact_sales').countDistinct('customer_id as total')).first(),
+            filter(db('fact_sales').countDistinct('product_id as total')).first(),
 
-            // C. Sales by Category (Pie Chart)
+            // Kategori
             filter(db('fact_sales')
-                .join('dim_product', 'fact_sales.product_id', '=', 'dim_product.product_id')
-                .join('dim_sub_category', 'dim_product.subkategori_id', '=', 'dim_sub_category.subkategori_id')
-                .join('dim_kategori', 'dim_sub_category.kategori_id', '=', 'dim_kategori.kategori_id')
+                .join('dim_product', 'fact_sales.product_id', 'dim_product.product_id')
+                .join('dim_sub_category', 'dim_product.subkategori_id', 'dim_sub_category.subkategori_id')
+                .join('dim_kategori', 'dim_sub_category.kategori_id', 'dim_kategori.kategori_id')
                 .select('dim_kategori.kategori_name')
                 .sum('fact_sales.sales as total')
                 .groupBy('dim_kategori.kategori_name')),
 
-            // D. Top 5 Products (Bar Chart)
+
+            // Top 5 produk
             filter(db('fact_sales')
-                .join('dim_product', 'fact_sales.product_id', '=', 'dim_product.product_id')
+                .join('dim_product', 'fact_sales.product_id', 'dim_product.product_id')
                 .select('dim_product.product_name')
                 .sum('fact_sales.quantity as total')
                 .groupBy('dim_product.product_name')
                 .orderBy('total', 'desc')
                 .limit(5)),
 
-            // E. Monthly Sales Trend (Line Chart)
+
+            // Time series
             filter(db('fact_sales')
-                .join('dim_date', 'fact_sales.order_date_id', '=', 'dim_date.date_id')
-                .select('dim_date.month_name', 'dim_date.year', 'dim_date.month') // month (angka) untuk sorting
+                .join('dim_date', 'fact_sales.order_date_id', 'dim_date.date_id')
+                .select('dim_date.month_name', 'dim_date.year', 'dim_date.month')
                 .sum('fact_sales.sales as total')
                 .groupBy('dim_date.year', 'dim_date.month', 'dim_date.month_name')
-                .orderBy('dim_date.year', 'asc')
-                .orderBy('dim_date.month', 'asc')),
+                .orderBy('dim_date.year')
+                .orderBy('dim_date.month')),
 
-            // F. Sales by Customer Segment (Donut Chart)
             filter(db('fact_sales')
-                .join('dim_customer', 'fact_sales.customer_id', '=', 'dim_customer.customer_id')
+                .join('dim_date', 'fact_sales.order_date_id', 'dim_date.date_id')
+                .select('dim_date.year', 'dim_date.quarter')
+                .sum('fact_sales.sales as total')
+                .groupBy('dim_date.year', 'dim_date.quarter')
+                .orderBy('dim_date.year')
+                .orderBy('dim_date.quarter')),
+
+            filter(db('fact_sales')
+                .join('dim_date', 'fact_sales.order_date_id', 'dim_date.date_id')
+                .select('dim_date.year')
+                .sum('fact_sales.sales as total')
+                .groupBy('dim_date.year')
+                .orderBy('dim_date.year')),
+
+
+            // Segmen customer
+            filter(db('fact_sales')
+                .join('dim_customer', 'fact_sales.customer_id', 'dim_customer.customer_id')
                 .select('dim_customer.segmen')
                 .sum('fact_sales.sales as total')
                 .groupBy('dim_customer.segmen')),
-            
-            // G. Top Performing City (List/Bar)
+
+            // region
             filter(db('fact_sales')
-                .join('dim_region', 'fact_sales.postalcode', '=', 'dim_region.postal_code')
+                .join('dim_region', 'fact_sales.postalcode', 'dim_region.postal_code')
                 .select('dim_region.city')
                 .sum('fact_sales.sales as total')
                 .groupBy('dim_region.city')
                 .orderBy('total', 'desc')
-                .limit(5))
+                .limit(5)),
+
+
+            // Shipmode
+            filter(db('fact_sales')
+                .join('dim_shipmode', 'fact_sales.shipmode_id', 'dim_shipmode.shipmode_id')
+                .select('dim_shipmode.shipmode')
+                .countDistinct('fact_sales.order_id as total_order')
+                .sum('fact_sales.sales as total_sales')
+                .groupBy('dim_shipmode.shipmode'))
         ]);
 
-        // 4. Kalkulasi Logic (AOV) & Formatting
         const total_sales = parseFloat(totalSalesResult.total || 0);
         const total_trx = parseInt(totalTxResult.total || 0);
-        // Hindari pembagian dengan nol
         const aov = total_trx > 0 ? total_sales / total_trx : 0;
-
-        // 5. Struktur Response JSON
-        const data = {
-            summary: {
-                total_sales: total_sales,
-                avg_order_value: aov,
-                total_transactions: total_trx
-            },
-            charts: {
-                sales_by_category: categoryResult.map(item => ({
-                    label: item.kategori_name,
-                    value: parseFloat(item.total)
-                })),
-                top_products: topProductResult.map(item => ({
-                    label: item.product_name,
-                    value: parseFloat(item.total)
-                })),
-                monthly_trend: trendResult.map(item => ({
-                    label: `${item.month_name} ${item.year}`, // Contoh: "Jan 2023"
-                    value: parseFloat(item.total)
-                })),
-                sales_by_segment: segmentResult.map(item => ({
-                    label: item.segmen,
-                    value: parseFloat(item.total)
-                })),
-                top_cities: cityResult.map(item => ({
-                    label: item.city,
-                    value: parseFloat(item.total)
-                }))
-            }
-        };
 
         return h.response({
             status: 'success',
-            message: 'Dashboard data fetched',
-            data: data
+            message: 'Dashboard BI data fetched',
+            data: {
+                summary: {
+                    total_sales,
+                    total_transactions: total_trx,
+                    avg_order_value: aov,
+                    total_quantity: parseInt(totalQtyResult.total || 0),
+                    total_customers: parseInt(totalCustomerResult.total || 0),
+                    total_products: parseInt(totalProductResult.total || 0)
+                },
+                charts: {
+                    sales_by_category: categoryResult,
+                    top_products: topProductResult,
+                    monthly_trend: trendMonthlyResult,
+                    quarterly_trend: trendQuarterResult,
+                    yearly_trend: trendYearResult,
+                    sales_by_segment: segmentResult,
+                    top_cities: cityResult,
+                    shipping_performance: shipModeResult
+                }
+            }
         }).code(200);
 
     } catch (error) {
@@ -452,6 +477,7 @@ const statistik = async (request, h) => {
         return h.response({ status: 'error', message: 'Internal Server Error' }).code(500);
     }
 };
+
 
 module.exports = {
     dashboard,

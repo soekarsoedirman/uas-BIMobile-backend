@@ -202,6 +202,7 @@ const cartlist = async (request, h) => {
             .select(
                 'cart.cart_id',
                 'cart.product_id',
+                'cart.quantity',
                 'dim_product.price',
                 'dim_product.product_name'
             )
