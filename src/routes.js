@@ -134,7 +134,7 @@ const routes = [
         handler: addproduct,
     },
     {
-        method: 'POST',
+        method: 'PUT',
         path: '/products/{id}',
         options:{
             validate:{
