@@ -107,7 +107,8 @@ exports.up = function(knex) {
 
     // 3.3 TABEL ORDER 
     .createTable('tabel_order', function(table) {
-      table.string('order_id').primary();
+
+      table.string('order_id'); 
 
       table.string('customer_id').references('customer_id').inTable('dim_customer')
         .onDelete('CASCADE').onUpdate('CASCADE');
@@ -125,6 +126,8 @@ exports.up = function(knex) {
         .onDelete('CASCADE').onUpdate('CASCADE'); 
       
       table.timestamps(true, true);
+
+      table.primary(['order_id', 'product_id']);
     })
 
     // =========================================

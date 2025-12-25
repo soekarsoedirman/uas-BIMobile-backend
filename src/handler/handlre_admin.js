@@ -250,7 +250,7 @@ const orderconfirm = async (request, h) => {
                 'sales',
                 'status',
                 'shipmode_id',
-                'postal_code'
+                'postalcode' // PERBAIKAN: Gunakan 'postalcode' (sesuai database)
             ).where('order_id', '=', id);
 
         if (orderItems.length === 0) {
@@ -272,7 +272,7 @@ const orderconfirm = async (request, h) => {
         await trx('tabel_order')
             .where('order_id', '=', id)
             .update({
-                status: 'Dikirim',
+                status: 'Dikirim', // Sesuaikan status akhir yang diinginkan ('Success' atau 'Dikirim')
                 updated_at: new Date()
             });
 
@@ -298,11 +298,11 @@ const orderconfirm = async (request, h) => {
         for (const item of orderItems) {
             await trx('fact_sales').insert({
                 order_id: item.order_id,
-                order_date_id: item.order_date,
+                order_date_id: item.order_date, // Pastikan format tanggal sesuai
                 ship_date_id: dateId, 
                 product_id: item.product_id,
                 customer_id: item.customer_id,
-                postalcode: item.postal_code, 
+                postalcode: item.postalcode, // PERBAIKAN: ambil dari item.postalcode
                 shipmode_id: item.shipmode_id,
                 quantity: item.quantity,
                 sales: item.sales,
