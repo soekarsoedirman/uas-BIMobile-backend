@@ -81,8 +81,8 @@ const addproduct = async (request, h) => {
 
 const editproduct = async (request, h) => {
     const db = request.server.app.db;
-    const { id } = request.params;   // ✅ WAJIB ADA
-    const { product_name, subkategori_id } = request.payload;
+    const { id } = request.params;   
+    const { product_name, price, subkategori_id  } = request.payload;
     const userRole = request.auth.credentials.user.role_id;
 
     if (userRole !== 1) {
@@ -104,7 +104,8 @@ const editproduct = async (request, h) => {
             .where('product_id', id)
             .update({
                 product_name,
-                subkategori_id
+                price,
+                subkategori_id,
             });
 
         if (updated === 0) {

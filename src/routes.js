@@ -140,8 +140,12 @@ const routes = [
             validate:{
                 payload:Joi.object({
                     product_name: Joi.string().min(3).required(),
+                    price: Joi.number().required(),
                     subkategori_id: Joi.number().integer().required(),
-                })
+                }),
+                failAction: (request, h, err) => {
+                throw err;
+            }
             }
         },
         handler: editproduct,
