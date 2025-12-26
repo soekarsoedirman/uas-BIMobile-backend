@@ -440,7 +440,7 @@ const statistik = async (request, h) => {
                 .join('dim_shipmode', 'fact_sales.shipmode_id', 'dim_shipmode.shipmode_id')
                 .select('dim_shipmode.shipmode')
                 .countDistinct('fact_sales.order_id as total_order')
-                .sum('fact_sales.sales as total_sales')
+                .countDistinct('fact_sales.order_id as total_sales')
                 .groupBy('dim_shipmode.shipmode'))
         ]);
 
